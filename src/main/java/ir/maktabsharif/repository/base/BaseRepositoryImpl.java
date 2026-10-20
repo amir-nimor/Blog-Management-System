@@ -1,4 +1,4 @@
-package ir.maktabsharif.repository;
+package ir.maktabsharif.repository.base;
 
 import ir.maktabsharif.dao.BaseModel;
 import ir.maktabsharif.exception.HibernateException;
@@ -8,13 +8,15 @@ import ir.maktabsharif.util.HibernateUtil;
 import java.util.List;
 import java.util.Optional;
 
-public class BaseRepositoryImpl<T extends BaseModel<ID>, ID extends Number> implements BaseRepository<T, ID> {
+public abstract class BaseRepositoryImpl<T extends BaseModel<ID>, ID extends Number> implements BaseRepository<T, ID> {
 
     private Class<T> entity;
 
     public BaseRepositoryImpl(Class<T> entity) {
         this.entity = entity;
     }
+
+    protected abstract void updateEntity(T dbEntity,T newEntity);
 
     @Override
     public T create(T t) {
@@ -32,7 +34,8 @@ public class BaseRepositoryImpl<T extends BaseModel<ID>, ID extends Number> impl
     public T update(T t) {
         try {
             return HibernateUtil.InTxReturn(em -> {
-                em.merge(t);
+                T dbEntity = em.find(entity,t.getId());
+                updateEntity(dbEntity,t);
                 return t;
             });
         } catch (HibernateException e) {
@@ -44,20 +47,37 @@ public class BaseRepositoryImpl<T extends BaseModel<ID>, ID extends Number> impl
     public ID delete(ID id) {
         try {
             return HibernateUtil.InTxReturn(em -> {
-
+                if (Optional.ofNullable(em.find(entity, id)).isPresent()) {
+                    em.remove(em.find(entity, id));
+                    return id;
+                }
+                throw new HibernateException("your entity Not Founded");
             });
         } catch (HibernateException e) {
-            throw new RepositoryException("your operation create is faield => " + e.getMessage());
+            throw new RepositoryException("your operation delete is faield => " + e.getMessage());
         }
     }
 
     @Override
     public T read(ID id) {
-        return null;
+        try {
+            return HibernateUtil.read(em -> {
+               return em.find(entity,id);
+            });
+        } catch (HibernateException e) {
+            throw new RepositoryException("your operation findById is faield => " + e.getMessage());
+        }
     }
 
     @Override
     public List<T> findAll() {
-        return List.of();
+        try {
+            return HibernateUtil.read(em -> {
+                return em.createQuery("from "+entity.getSimpleName())
+                        .getResultList();
+            });
+        } catch (HibernateException e) {
+            throw new RepositoryException("your operation findall is faield => " + e.getMessage());
+        }
     }
 }

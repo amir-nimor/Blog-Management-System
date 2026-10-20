@@ -1,1 +1,13 @@
 GET http://localhost:8080/Blog_Management_System_war_exploded/Register/amir
+
+###
+
+POST http://localhost:8080/Blog_Management_System_war_exploded/Register
+Content-Type: application/json
+
+{
+  "username": "amir",
+  "password": "amir",
+  "phonNumber": "15641561",
+  "fullName": "sdrgseg"
+}

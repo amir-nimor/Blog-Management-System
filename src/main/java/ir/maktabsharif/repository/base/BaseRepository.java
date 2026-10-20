@@ -1,4 +1,4 @@
-package ir.maktabsharif.repository;
+package ir.maktabsharif.repository.base;
 
 import ir.maktabsharif.dao.BaseModel;
 
